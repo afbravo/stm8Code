@@ -1,0 +1,187 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ISO C Compiler 
+                                      3 ; Version 4.3.0 #14184 (Linux)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module led
+                                      6 	.optsdcc -mstm8
+                                      7 	
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl _main
+                                     12 	.globl _PD_CR2
+                                     13 	.globl _PD_CR1
+                                     14 	.globl _PD_DDR
+                                     15 	.globl _PD_IDR
+                                     16 	.globl _PB_CR2
+                                     17 	.globl _PB_CR1
+                                     18 	.globl _PB_DDR
+                                     19 	.globl _PB_ODR
+                                     20 ;--------------------------------------------------------
+                                     21 ; ram data
+                                     22 ;--------------------------------------------------------
+                                     23 	.area DATA
+                                     24 ;--------------------------------------------------------
+                                     25 ; ram data
+                                     26 ;--------------------------------------------------------
+                                     27 	.area INITIALIZED
+      000000                         28 _PB_ODR::
+      000000                         29 	.ds 2
+      000002                         30 _PB_DDR::
+      000002                         31 	.ds 2
+      000004                         32 _PB_CR1::
+      000004                         33 	.ds 2
+      000006                         34 _PB_CR2::
+      000006                         35 	.ds 2
+      000008                         36 _PD_IDR::
+      000008                         37 	.ds 2
+      00000A                         38 _PD_DDR::
+      00000A                         39 	.ds 2
+      00000C                         40 _PD_CR1::
+      00000C                         41 	.ds 2
+      00000E                         42 _PD_CR2::
+      00000E                         43 	.ds 2
+                                     44 ;--------------------------------------------------------
+                                     45 ; Stack segment in internal ram
+                                     46 ;--------------------------------------------------------
+                                     47 	.area SSEG
+      000000                         48 __start__stack:
+      000000                         49 	.ds	1
+                                     50 
+                                     51 ;--------------------------------------------------------
+                                     52 ; absolute external ram data
+                                     53 ;--------------------------------------------------------
+                                     54 	.area DABS (ABS)
+                                     55 
+                                     56 ; default segment ordering for linker
+                                     57 	.area HOME
+                                     58 	.area GSINIT
+                                     59 	.area GSFINAL
+                                     60 	.area CONST
+                                     61 	.area INITIALIZER
+                                     62 	.area CODE
+                                     63 
+                                     64 ;--------------------------------------------------------
+                                     65 ; interrupt vector
+                                     66 ;--------------------------------------------------------
+                                     67 	.area HOME
+      000000                         68 __interrupt_vect:
+      000000 82v00u00u00             69 	int s_GSINIT ; reset
+                                     70 ;--------------------------------------------------------
+                                     71 ; global & static initialisations
+                                     72 ;--------------------------------------------------------
+                                     73 	.area HOME
+                                     74 	.area GSINIT
+                                     75 	.area GSFINAL
+                                     76 	.area GSINIT
+      000000 CDr00r00         [ 4]   77 	call	___sdcc_external_startup
+      000003 4D               [ 1]   78 	tnz	a
+      000004 27 03            [ 1]   79 	jreq	__sdcc_init_data
+      000006 CCr00r04         [ 2]   80 	jp	__sdcc_program_startup
+      000009                         81 __sdcc_init_data:
+                                     82 ; stm8_genXINIT() start
+      000009 AEr00r00         [ 2]   83 	ldw x, #l_DATA
+      00000C 27 07            [ 1]   84 	jreq	00002$
+      00000E                         85 00001$:
+      00000E 72 4FuFFuFF      [ 1]   86 	clr (s_DATA - 1, x)
+      000012 5A               [ 2]   87 	decw x
+      000013 26 F9            [ 1]   88 	jrne	00001$
+      000015                         89 00002$:
+      000015 AEr00r00         [ 2]   90 	ldw	x, #l_INITIALIZER
+      000018 27 09            [ 1]   91 	jreq	00004$
+      00001A                         92 00003$:
+      00001A D6uFFuFF         [ 1]   93 	ld	a, (s_INITIALIZER - 1, x)
+      00001D D7uFFuFF         [ 1]   94 	ld	(s_INITIALIZED - 1, x), a
+      000020 5A               [ 2]   95 	decw	x
+      000021 26 F7            [ 1]   96 	jrne	00003$
+      000023                         97 00004$:
+                                     98 ; stm8_genXINIT() end
+                                     99 	.area GSFINAL
+      000000 CCr00r04         [ 2]  100 	jp	__sdcc_program_startup
+                                    101 ;--------------------------------------------------------
+                                    102 ; Home
+                                    103 ;--------------------------------------------------------
+                                    104 	.area HOME
+                                    105 	.area HOME
+      000004                        106 __sdcc_program_startup:
+      000004 CCr00r00         [ 2]  107 	jp	_main
+                                    108 ;	return from main will return to caller
+                                    109 ;--------------------------------------------------------
+                                    110 ; code
+                                    111 ;--------------------------------------------------------
+                                    112 	.area CODE
+                                    113 ;	led.c: 20: int main(void)
+                                    114 ;	-----------------------------------------
+                                    115 ;	 function main
+                                    116 ;	-----------------------------------------
+      000000                        117 _main:
+      000000 88               [ 1]  118 	push	a
+                                    119 ;	led.c: 24: *PB_DDR |= (1 << LED_PIN);
+      000001 CEu00u02         [ 2]  120 	ldw	x, _PB_DDR+0
+      000004 F6               [ 1]  121 	ld	a, (x)
+      000005 AA 01            [ 1]  122 	or	a, #0x01
+      000007 F7               [ 1]  123 	ld	(x), a
+                                    124 ;	led.c: 25: *PB_CR1 |= (1 << LED_PIN); // push-pull
+      000008 CEu00u04         [ 2]  125 	ldw	x, _PB_CR1+0
+      00000B F6               [ 1]  126 	ld	a, (x)
+      00000C AA 01            [ 1]  127 	or	a, #0x01
+      00000E F7               [ 1]  128 	ld	(x), a
+                                    129 ;	led.c: 28: *PD_DDR &= ~(1 << BTN_PIN);
+      00000F CEu00u0A         [ 2]  130 	ldw	x, _PD_DDR+0
+      000012 F6               [ 1]  131 	ld	a, (x)
+      000013 A4 7F            [ 1]  132 	and	a, #0x7f
+      000015 F7               [ 1]  133 	ld	(x), a
+                                    134 ;	led.c: 29: *PD_CR1 |= (1 << BTN_PIN);  // pull-up
+      000016 CEu00u0C         [ 2]  135 	ldw	x, _PD_CR1+0
+      000019 F6               [ 1]  136 	ld	a, (x)
+      00001A AA 80            [ 1]  137 	or	a, #0x80
+      00001C F7               [ 1]  138 	ld	(x), a
+                                    139 ;	led.c: 30: *PD_CR2 &= ~(1 << BTN_PIN); // interrupt disabled
+      00001D CEu00u0E         [ 2]  140 	ldw	x, _PD_CR2+0
+      000020 F6               [ 1]  141 	ld	a, (x)
+      000021 A4 7F            [ 1]  142 	and	a, #0x7f
+      000023 F7               [ 1]  143 	ld	(x), a
+                                    144 ;	led.c: 32: while (1)
+      000024                        145 00105$:
+                                    146 ;	led.c: 34: if ((*PD_IDR & (1 << BTN_PIN)) == 0)
+      000024 CEu00u08         [ 2]  147 	ldw	x, _PD_IDR+0
+      000027 F6               [ 1]  148 	ld	a, (x)
+      000028 6B 01            [ 1]  149 	ld	(0x01, sp), a
+                                    150 ;	led.c: 36: *PB_ODR |= (1 << LED_PIN);
+      00002A CEu00u00         [ 2]  151 	ldw	x, _PB_ODR+0
+      00002D F6               [ 1]  152 	ld	a, (x)
+                                    153 ;	led.c: 34: if ((*PD_IDR & (1 << BTN_PIN)) == 0)
+      00002E 0D 01            [ 1]  154 	tnz	(0x01, sp)
+      000030 2B 05            [ 1]  155 	jrmi	00102$
+                                    156 ;	led.c: 36: *PB_ODR |= (1 << LED_PIN);
+      000032 AA 01            [ 1]  157 	or	a, #0x01
+      000034 F7               [ 1]  158 	ld	(x), a
+      000035 20 ED            [ 2]  159 	jra	00105$
+      000037                        160 00102$:
+                                    161 ;	led.c: 40: *PB_ODR &= ~(1 << LED_PIN);
+      000037 A4 FE            [ 1]  162 	and	a, #0xfe
+      000039 F7               [ 1]  163 	ld	(x), a
+      00003A 20 E8            [ 2]  164 	jra	00105$
+                                    165 ;	led.c: 43: }
+      00003C 84               [ 1]  166 	pop	a
+      00003D 81               [ 4]  167 	ret
+                                    168 	.area CODE
+                                    169 	.area CONST
+                                    170 	.area INITIALIZER
+      000000                        171 __xinit__PB_ODR:
+      000000 50 05                  172 	.dw #0x5005
+      000002                        173 __xinit__PB_DDR:
+      000002 50 07                  174 	.dw #0x5007
+      000004                        175 __xinit__PB_CR1:
+      000004 50 08                  176 	.dw #0x5008
+      000006                        177 __xinit__PB_CR2:
+      000006 50 09                  178 	.dw #0x5009
+      000008                        179 __xinit__PD_IDR:
+      000008 50 10                  180 	.dw #0x5010
+      00000A                        181 __xinit__PD_DDR:
+      00000A 50 11                  182 	.dw #0x5011
+      00000C                        183 __xinit__PD_CR1:
+      00000C 50 12                  184 	.dw #0x5012
+      00000E                        185 __xinit__PD_CR2:
+      00000E 50 13                  186 	.dw #0x5013
+                                    187 	.area CABS (ABS)
